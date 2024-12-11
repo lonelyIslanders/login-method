@@ -36,6 +36,11 @@ class Utils {
         return resp.data
     }
 
+    static async getEmailCode(url: string, email: string) {
+        const resp = await axios.post(url, { email })
+        return resp.data
+    }
+
     static decodeBase64(base64: string) {
         const binaryString = atob(base64);
         const decoder = new TextDecoder('utf-8');

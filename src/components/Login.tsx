@@ -1,7 +1,8 @@
 import bs58 from 'bs58'
-import nacl from 'tweetnacl'
 import React, { useState, useEffect } from 'react';
 import Utils from '../utils/utils';
+
+import { Button, TextField, Box } from '@mui/material';
 
 
 const backedUrl = 'https://kline.npmcow.com'
@@ -13,6 +14,19 @@ const Login = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [decodedJson, setDecodedJson] = useState<string>('');
 
+    const [bindEmailInputEmail, setBindEmailInputEmail] = useState('')
+    const [bindEmailInputCode, setBindEmailInputCode] = useState('')
+    const [bindEmailRequestCodeButtonDisabled, setBindEmailRequestCodeButtonDisabled] = useState<boolean>(false)
+    const [bindEmailRequestCodeButtonSeconds, setBindEmailRequestCodeButtonSeconds] = useState(60)
+
+
+    function handleBindEmailInputEmailChange(event: any) {
+        setBindEmailInputEmail(event.target.value)
+    }
+    function handleBindEmailInputCodeChange(event: any) {
+        setBindEmailInputCode(event.target.value)
+    }
+
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const base64Data = urlParams.get('data');   //绑定x成功后会携带base64编码过后的用户信息json，查验code是否200，或者查验socialAccount这个数组字段中是否含有provider是twitter的项更为保险；400则表示绑定失败，具体再看msg
@@ -22,8 +36,35 @@ const Login = () => {
             const formattedJson = Utils.formatJson(decodedData);
             setDecodedJson(formattedJson);
         }
-    }, []);
 
+
+
+        let timer: any;
+        if (bindEmailRequestCodeButtonDisabled && bindEmailRequestCodeButtonSeconds > 0) {
+            timer = setInterval(() => {
+                setBindEmailRequestCodeButtonSeconds((prev) => prev - 1);
+            }, 1000);
+        } else if (bindEmailRequestCodeButtonSeconds === 0) {
+            clearInterval(timer);
+            setBindEmailRequestCodeButtonDisabled(false);
+        }
+        return () => clearInterval(timer);
+    }, [bindEmailRequestCodeButtonDisabled, bindEmailRequestCodeButtonSeconds]);
+
+    //请求验证码按钮点击触发
+    async function handleBindEmailRequestCodeButtonClick() {
+        if (!bindEmailInputEmail) {
+            alert('please input the email')
+            return
+        }
+        setBindEmailRequestCodeButtonDisabled(true);
+        await userRequestBindEmailCodeFun()
+        setBindEmailRequestCodeButtonDisabled(true);
+        setBindEmailRequestCodeButtonSeconds(60);
+    };
+
+
+    //用户钱包登陆
     async function userLoginFun(walletAddress: string, message: string, signature: string) {
         const getNonceResp = await Utils.getNonce(backedUrl + '/post/kline/project/user/getNonce', walletAddress)
         const userLoginNonce = getNonceResp.data.nonce;
@@ -38,6 +79,16 @@ const Login = () => {
         console.log('ddsdd', userLoginResp.data)
         const formattedJson = Utils.formatJson(JSON.stringify(userLoginResp.data));
         setUserProfile(formattedJson);
+    }
+
+    //用户请求验证码
+    async function userRequestBindEmailCodeFun() {
+        const email = bindEmailInputEmail
+        const userRequestBindEmailCodeResp = await Utils.getEmailCode(backedUrl + '/post/kline/project/auth/email/code', email)
+        console.log(userRequestBindEmailCodeResp.code)
+        if (userRequestBindEmailCodeResp.code !== 200) {
+            setBindEmailRequestCodeButtonDisabled(false)
+        }
     }
 
     async function fuckSolanaLogin() {
@@ -69,9 +120,63 @@ const Login = () => {
 
     return (
         <>
+
+
+            <div style={{ padding: '20px' }}>
+
+            </div>
+
+
+
+
+
+
             <p>几把登陆</p>
-            <button onClick={fuckTwitterLogin}>twitter</button>
-            <button onClick={fuckSolanaLogin}>solana phantom</button>
+            <Button variant='contained' color='primary' onClick={fuckTwitterLogin}>推特绑定</Button>
+
+            <Button onClick={fuckSolanaLogin}>solana</Button>
+
+
+            
+
+
+            <Box sx={{ padding: '20px' }}>
+                <Box sx={{ marginBottom: '16px' }}>
+                    <TextField
+                        label='Email'
+                        variant="outlined"
+                        value={bindEmailInputEmail}
+                        onChange={handleBindEmailInputEmailChange}
+                        margin="normal"
+                    />
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Box sx={{ flex: 1 }}>
+                        <TextField
+                            label='Code'
+                            variant="outlined"
+                            value={bindEmailInputCode}
+                            onChange={handleBindEmailInputCodeChange}
+                            margin="normal"
+                        />
+                    </Box>
+                    <Box sx={{ width: 'auto' }}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleBindEmailRequestCodeButtonClick}
+                            disabled={bindEmailRequestCodeButtonDisabled}
+                        >
+                            {bindEmailRequestCodeButtonDisabled ? `请等待 ${bindEmailRequestCodeButtonSeconds}s` : '获取验证码'}
+                        </Button>
+                    </Box>
+                </Box>
+            </Box>
+
+
+
+
 
 
 
@@ -95,9 +200,6 @@ const Login = () => {
                                 {userProfile}
                             </pre>
                         )}
-                        {/* <p>昵称:    {userProfile.nickname}</p>
-                        <p>地址:    {userProfile.address}</p>
-                        <p>简介:    {userProfile.bio}</p> */}
                     </div>
                 )}
 
