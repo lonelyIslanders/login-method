@@ -65,12 +65,12 @@ const Login = () => {
 
 
     //用户钱包登陆
-    async function userLoginFun(walletAddress: string, message: string, signature: string) {
+    async function userLoginFun(walletAddress: string, message: string, signature: string, chain: string) {
         const getNonceResp = await Utils.getNonce(backedUrl + '/post/kline/project/user/getNonce', walletAddress)
         const userLoginNonce = getNonceResp.data.nonce;
         console.log('用户的nonce is', userLoginNonce)
 
-        const userLoginResp = await Utils.userLogin(backedUrl + '/post/kline/project/user/login', 'solana', walletAddress, message, signature, userLoginNonce)
+        const userLoginResp = await Utils.userLogin(backedUrl + '/post/kline/project/user/login', chain, walletAddress, message, signature, userLoginNonce)
         const userLoginToken = userLoginResp.data.jwtToken
         console.log('用户的token is', userLoginToken)
 
@@ -106,10 +106,29 @@ const Login = () => {
             });
             const signature = bs58.encode(signedMessage.signature)
             console.log('用户solana钱包签名 is', signature)
-            await userLoginFun(address, message, signature)
+            await userLoginFun(address, message, signature, 'solana')
         } else {
             return alert('没有phantom')
         }
+    }
+
+    async function fuckEvmLogin() {
+        if (typeof wondow.ethereum === 'undefined') {
+            alert("MetaMask未安装");
+            return;
+        }
+        await wondow.ethereum.request({ method: 'eth_requestAccounts' });
+
+        const accounts = await wondow.ethereum.request({ method: 'eth_accounts' });
+        const address = accounts[0];    //不一定选第一个
+        const message = "Hello word excel ppt";
+
+        const signature = await wondow.ethereum.request({
+            method: 'personal_sign',
+            params: [message, address],
+        });
+        console.log('用户evm钱包签名 is', signature)
+        await userLoginFun(address, message, signature, 'evm')
     }
 
     async function fuckTwitterLogin() {
@@ -136,8 +155,10 @@ const Login = () => {
 
             <Button onClick={fuckSolanaLogin}>solana</Button>
 
+            <Button onClick={fuckEvmLogin}>evm</Button>
 
-            
+
+
 
 
             <Box sx={{ padding: '20px' }}>
