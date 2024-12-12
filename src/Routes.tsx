@@ -2,7 +2,7 @@ import React from 'react';
 import { Route, Routes } from 'react-router-dom'
 import Login from './components/Login';
 
-import Test from './components/Test'
+import UploadImage from './components/UploadImage'
 
 
 
@@ -10,7 +10,7 @@ const AppRoutes = () => {
     return (
         <Routes>
             <Route path='/' element={<Login />} />
-            <Route path='/test' element={<Test />} />
+            <Route path='/upload' element={<UploadImage />} />
         </Routes>
     )
 }

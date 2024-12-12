@@ -137,6 +137,7 @@ const Login = () => {
         window.location.href = `https://kline.npmcow.com/get/kline/project/auth/x?jwtToken=${jwtToken}`
     }
 
+
     return (
         <>
 
@@ -156,8 +157,6 @@ const Login = () => {
             <Button onClick={fuckSolanaLogin}>solana</Button>
 
             <Button onClick={fuckEvmLogin}>evm</Button>
-
-
 
 
 
